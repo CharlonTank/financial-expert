@@ -10,6 +10,7 @@ import Element.Input as Input
 import Element.Region as Region
 import Html
 import Html.Attributes as Attr
+import Html.Events exposing (onSubmit)
 import Lamdera
 import Types exposing (..)
 import Url
@@ -64,6 +65,9 @@ update msg model =
 
         TextChanged newQuestion ->
             ( { model | question = newQuestion }, Cmd.none )
+
+        SubmitQuestion ->
+            ( model, Lamdera.sendToBackend <| ReceiveQuestion model.question )
 
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
@@ -132,6 +136,23 @@ view model =
                             Input.labelAbove
                                 [ Font.color (Element.rgba255 46 52 54 1) ]
                                 (Element.text "")
+                        }
+                    , Input.button
+                        [ Background.color (Element.rgba255 52 101 164 1)
+                        , Element.centerY
+                        , Element.centerX
+                        , Font.center
+                        , Font.color (Element.rgba255 255 255 255 1)
+                        , Element.height Element.shrink
+                        , Element.width Element.shrink
+                        , Element.paddingXY 16 8
+                        , Border.rounded 2
+                        , Border.color (Element.rgba255 52 101 164 1)
+                        , Border.solid
+                        , Border.widthXY 1 1
+                        ]
+                        { onPress = Just SubmitQuestion
+                        , label = Element.text "Submit question"
                         }
                     , Element.column
                         [ Element.height Element.shrink
