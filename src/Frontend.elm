@@ -92,49 +92,50 @@ view model =
     { title = "AI Financial Expert"
     , body =
         [ layout [ width fill, height fill ]
-            (Element.column
-                [ Element.height Element.shrink
-                , Element.width Element.fill
-                , Element.paddingXY 192 192
+            (column
+                [ height shrink
+                , width fill
+                , paddingXY 32 32
                 ]
-                [ Element.column
-                    [ Element.spacingXY 0 32
-                    , Element.height Element.shrink
-                    , Element.width Element.fill
+                [ column
+                    [ spacingXY 0 32
+                    , height shrink
+                    , width fill
                     ]
-                    [ Element.paragraph
+                    [ el
                         [ Font.center
                         , Font.bold
-                        , Font.color (Element.rgba255 136 170 166 1)
+                        , Font.color (rgba255 136 170 166 1)
                         , Font.size 36
-                        , Element.height Element.shrink
-                        , Element.width Element.fill
+                        , height shrink
+                        , width fill
                         , Region.heading 1
                         ]
-                        [ Element.text "Financial Expert AI" ]
-                    , Element.paragraph
+                      <|
+                        text "Financial Expert AI"
+                    , paragraph
                         [ Font.center
                         , Font.bold
-                        , Font.color (Element.rgba255 46 52 54 1)
+                        , Font.color (rgba255 46 52 54 1)
                         , Font.size 24
-                        , Element.height Element.shrink
-                        , Element.width Element.fill
+                        , height shrink
+                        , width fill
                         , Region.heading 2
                         ]
-                        [ Element.text <| "Ask anything (" ++ String.fromInt model.counter ++ "/30)" ]
+                        [ text <| "Ask anything (" ++ String.fromInt model.counter ++ "/30)" ]
                     , Input.text
-                        [ Element.centerY
-                        , Element.centerX
-                        , Element.spacingXY 0 4
-                        , Element.height Element.shrink
-                        , Element.width
-                            (Element.fill
-                                |> Element.maximum 1024
-                                |> Element.minimum 256
+                        [ centerY
+                        , centerX
+                        , spacingXY 0 4
+                        , height shrink
+                        , width
+                            (fill
+                                |> maximum 1024
+                                |> minimum 256
                             )
-                        , Element.paddingXY 8 8
+                        , paddingXY 8 8
                         , Border.rounded 2
-                        , Border.color (Element.rgba255 186 189 182 1)
+                        , Border.color (rgba255 186 189 182 1)
                         , Border.solid
                         , Border.widthXY 1 1
                         , Font.center
@@ -144,20 +145,20 @@ view model =
                         , placeholder = Nothing
                         , label =
                             Input.labelAbove
-                                [ Font.color (Element.rgba255 46 52 54 1) ]
-                                (Element.text "")
+                                [ Font.color (rgba255 46 52 54 1) ]
+                                (text "")
                         }
                     , Input.button
-                        [ Background.color (Element.rgba255 52 101 164 1)
-                        , Element.centerY
-                        , Element.centerX
+                        [ Background.color (rgba255 52 101 164 1)
+                        , centerY
+                        , centerX
                         , Font.center
-                        , Font.color (Element.rgba255 255 255 255 1)
-                        , Element.height Element.shrink
-                        , Element.width Element.shrink
-                        , Element.paddingXY 16 8
+                        , Font.color (rgba255 255 255 255 1)
+                        , height shrink
+                        , width shrink
+                        , paddingXY 16 8
                         , Border.rounded 2
-                        , Border.color (Element.rgba255 52 101 164 1)
+                        , Border.color (rgba255 52 101 164 1)
                         , Border.solid
                         , Border.widthXY 1 1
                         ]
@@ -167,24 +168,24 @@ view model =
 
                             else
                                 Nothing
-                        , label = Element.text "Submit question"
+                        , label = text "Submit question"
                         }
-                    , Element.column
-                        [ Element.height Element.shrink
-                        , Element.width Element.fill
+                    , column
+                        [ height shrink
+                        , width fill
                         ]
-                        [ Element.paragraph
-                            [ Element.centerY
-                            , Element.centerX
-                            , Element.spacingXY 0 4
-                            , Element.height Element.shrink
-                            , Element.width
-                                (Element.fill
-                                    |> Element.maximum 1024
-                                    |> Element.minimum 256
+                        [ paragraph
+                            [ centerY
+                            , centerX
+                            , spacingXY 0 4
+                            , height shrink
+                            , width
+                                (fill
+                                    |> maximum 1024
+                                    |> minimum 256
                                 )
                             ]
-                            [ Element.paragraph [] [ text "Answer: ", viewResponse model.openAIResponse model.openAIState ] ]
+                            [ paragraph [] [ text "Answer: ", viewResponse model.openAIResponse model.openAIState ] ]
                         ]
                     ]
                 ]
