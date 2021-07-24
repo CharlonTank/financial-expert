@@ -5,6 +5,7 @@ import Env
 import Html
 import Http
 import Json.Decode.Pipeline exposing (optional, required)
+import Json.Encode exposing (float)
 import Lamdera exposing (ClientId, SessionId)
 import Lamdera.Json exposing (..)
 import Types exposing (..)
@@ -25,7 +26,7 @@ app =
 
 init : ( Model, Cmd BackendMsg )
 init =
-    ( { message = "Hello!" }
+    ( { message = "Hello!", openAIResponse = Nothing, counter = 0 }
     , Cmd.none
     )
 
@@ -36,10 +37,10 @@ update msg model =
         NoOpBackendMsg ->
             ( model, Cmd.none )
 
-        GetOpenAIResponse (Ok _) ->
-            ( model, Cmd.none )
+        GetOpenAIResponse clientId (Ok openAIResponse) ->
+            ( { model | openAIResponse = Just openAIResponse }, Lamdera.sendToFrontend clientId <| ReceiveOpenAIResponse openAIResponse )
 
-        GetOpenAIResponse (Err _) ->
+        GetOpenAIResponse _ (Err _) ->
             ( model, Cmd.none )
 
 
@@ -50,31 +51,36 @@ updateFromFrontend sessionId clientId msg model =
             ( model, Cmd.none )
 
         ReceiveQuestion question ->
-            ( model
-              -- , Http.get
-              --     -- { method = "GET"
-              --     -- , headers = []
-              --     { url = "https://api.openai.com/v1/engines/davinci/completions/browser_stream\n"
-              --     -- , body = Http.emptyBody
-              --     , expect = Http.expectJson GetOpenAIResponse decodeOpenAIResponse
-              --     -- , timeout = Nothing
-              --     -- , withCredentials = False
-              --     }
-            , Http.request
-                { method = "POST"
-                , headers = [ Http.header "Authorization" ("Bearer " ++ Env.openAIApiKey) ]
-                , url = "https://api.openai.com/v1/engines/davinci/completions"
-                , body =
-                    Http.jsonBody <|
-                        object
-                            [ ( "prompt", string question )
-                            , ( "max_tokens", int 30 )
-                            ]
-                , expect = Http.expectJson GetOpenAIResponse decodeOpenAIResponse
-                , timeout = Nothing
-                , tracker = Nothing
-                }
+            ( { model | counter = model.counter + 1 }
+            , if model.counter < 30 then
+                Cmd.batch
+                    [ Http.request
+                        { method = "POST"
+                        , headers = [ Http.header "Authorization" ("Bearer " ++ Env.openAIApiKey) ]
+                        , url = "https://api.openai.com/v1/engines/davinci/completions"
+                        , body =
+                            Http.jsonBody <|
+                                object
+                                    [ ( "prompt", string <| addExamples question )
+                                    , ( "max_tokens", int 140 )
+                                    , ( "temperature", float 0.5 )
+                                    , ( "top_p", int 1 )
+                                    , ( "n", int 1 )
+                                    , ( "stop", string "###" )
+                                    ]
+                        , expect = Http.expectJson (GetOpenAIResponse clientId) decodeOpenAIResponse
+                        , timeout = Nothing
+                        , tracker = Nothing
+                        }
+                    , Lamdera.sendToFrontend clientId <| ReceiveCounter <| model.counter + 1
+                    ]
+
+              else
+                Lamdera.sendToFrontend clientId TooMuchQuestions
             )
+
+        GetCounter ->
+            ( model, Lamdera.sendToFrontend clientId <| ReceiveCounter model.counter )
 
 
 decodeOpenAIResponse : Decoder OpenAIResponse
@@ -87,10 +93,6 @@ decodeOpenAIResponse =
         |> required "choices" (decoderList choiceDecoder)
 
 
-
--- "id": "cmpl-GxetY7rxbQDVuGoMhX19c8Qy", "object": "text_completion", "created": 1592103423, "choices": [{"text": ",", "index": 0, "logprobs": null, "finish_reason": null}], "model": "davinci:2020-05-03"
-
-
 choiceDecoder : Decoder Choice
 choiceDecoder =
     succeed Choice
@@ -98,3 +100,26 @@ choiceDecoder =
         |> required "index" decoderInt
         |> optional "logprobs" decoderInt 0
         |> optional "finish_reason" decoderString ""
+
+
+addExamples : String -> String
+addExamples question =
+    """This is a financial advisor that loves TimelineApp, green energy.
+Q: What do I value the most?
+A: Start by making a list of everything you spend money on by reviewing your bank and credit card statements. Some expenses, such as student loan payments, can’t be eliminated from your budget. But you may decide that weekly Postmates™ orders aren’t essential. By ranking each expense, it may be easier to see where you can make changes over time.
+###
+Q: Can I save more?
+A: If you aren’t sure how much you’re saving, it may be time to take a closer look at your what percentage of your income you’re setting aside for the future. There is no rule of thumb for how much you should be saving that applies to everyone. But if you can afford to save more, experts agree you should try.
+###
+Q: How am I financially protecting my loved ones?
+A: The best way to figure out how much life insurance coverage you might need, and how much you’re eligible for, is to use an online life insurance calculator. In a few minutes, it can help you determine you and your family’s needs, and give you a personalized quote for term life insurance coverage.
+###
+Q: How can I avoid tax as a British?
+A: The United Kingdom has a progressive tax system, meaning that those who earn the most pay the highest rates of income tax. The top 10% of earners in the UK pay over 50% of all income tax, and the top 1% pay over a quarter of all income tax.
+The top rate income tax in the UK is 45%, which applies to income over £150,000. There is also a tax-free personal allowance of £11,850 in the UK, after which a 20% income tax rate applies.
+###
+Q: How can I maximise my rents?
+A: In order to maximise rent, you have to get the best possible deal on your mortgage and on your rent. The best deals for mortgages are interest-only mortgages, where you only pay interest for a set period and then have a large repayment over a much longer period. With investment property, it is usually better to fix the mortgage rate for longer. With rent, it is better to negotiate a shorter lease.
+The best deal is to have no mortgage and to pay no rent. To do this, you need to keep your rents low so that your investment yields a sufficient return.
+###
+Q: """ ++ question

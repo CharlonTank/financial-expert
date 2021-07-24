@@ -9,8 +9,6 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Html
-import Html.Attributes as Attr
-import Html.Events exposing (onSubmit)
 import Lamdera
 import Types exposing (..)
 import Url
@@ -37,8 +35,11 @@ init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
       , question = ""
+      , openAIResponse = Nothing
+      , openAIState = Waiting
+      , counter = 0
       }
-    , Cmd.none
+    , Lamdera.sendToBackend GetCounter
     )
 
 
@@ -67,7 +68,7 @@ update msg model =
             ( { model | question = newQuestion }, Cmd.none )
 
         SubmitQuestion ->
-            ( model, Lamdera.sendToBackend <| ReceiveQuestion model.question )
+            ( { model | openAIState = Thinking }, Lamdera.sendToBackend <| ReceiveQuestion model.question )
 
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
@@ -75,6 +76,15 @@ updateFromBackend msg model =
     case msg of
         NoOpToFrontend ->
             ( model, Cmd.none )
+
+        ReceiveOpenAIResponse openAIResponse ->
+            ( { model | openAIResponse = Just openAIResponse, openAIState = Waiting }, Cmd.none )
+
+        TooMuchQuestions ->
+            ( { model | openAIState = Saturated }, Cmd.none )
+
+        ReceiveCounter counter ->
+            ( { model | counter = counter }, Cmd.none )
 
 
 view : Model -> { title : String, body : List (Html.Html FrontendMsg) }
@@ -111,7 +121,7 @@ view model =
                         , Element.width Element.fill
                         , Region.heading 2
                         ]
-                        [ Element.text "Ask anything" ]
+                        [ Element.text <| "Ask anything (" ++ String.fromInt model.counter ++ "/30)" ]
                     , Input.text
                         [ Element.centerY
                         , Element.centerX
@@ -151,7 +161,12 @@ view model =
                         , Border.solid
                         , Border.widthXY 1 1
                         ]
-                        { onPress = Just SubmitQuestion
+                        { onPress =
+                            if model.openAIState == Waiting then
+                                Just SubmitQuestion
+
+                            else
+                                Nothing
                         , label = Element.text "Submit question"
                         }
                     , Element.column
@@ -161,7 +176,6 @@ view model =
                         [ Element.paragraph
                             [ Element.centerY
                             , Element.centerX
-                            , Font.center
                             , Element.spacingXY 0 4
                             , Element.height Element.shrink
                             , Element.width
@@ -170,10 +184,33 @@ view model =
                                     |> Element.minimum 256
                                 )
                             ]
-                            [ Element.text "Answer:" ]
+                            [ Element.paragraph [] [ text "Answer: ", viewResponse model.openAIResponse model.openAIState ] ]
                         ]
                     ]
                 ]
             )
         ]
     }
+
+
+viewResponse : Maybe OpenAIResponse -> OpenAIState -> Element FrontendMsg
+viewResponse openAIResponse_ openAIState =
+    case openAIState of
+        Thinking ->
+            text "...sorry...but...I...need...time...to...think..."
+
+        Saturated ->
+            text "Every question answered costs money to Charles, please ask him to reload the backend so you can try"
+
+        Waiting ->
+            case openAIResponse_ of
+                Nothing ->
+                    none
+
+                Just openAIResponse ->
+                    text <| removeAPrompt <| Maybe.withDefault "" <| Maybe.map .text <| List.head openAIResponse.choices
+
+
+removeAPrompt : String -> String
+removeAPrompt =
+    String.dropLeft 3

@@ -3,6 +3,7 @@ module Types exposing (..)
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Http exposing (Error)
+import Lamdera exposing (ClientId)
 import Url exposing (Url)
 
 
@@ -10,11 +11,16 @@ type alias FrontendModel =
     { key : Key
     , message : String
     , question : String
+    , openAIResponse : Maybe OpenAIResponse
+    , openAIState : OpenAIState
+    , counter : Int
     }
 
 
 type alias BackendModel =
     { message : String
+    , openAIResponse : Maybe OpenAIResponse
+    , counter : Int
     }
 
 
@@ -29,15 +35,19 @@ type FrontendMsg
 type ToBackend
     = NoOpToBackend
     | ReceiveQuestion String
+    | GetCounter
 
 
 type BackendMsg
     = NoOpBackendMsg
-    | GetOpenAIResponse (Result Error OpenAIResponse)
+    | GetOpenAIResponse ClientId (Result Error OpenAIResponse)
 
 
 type ToFrontend
     = NoOpToFrontend
+    | ReceiveOpenAIResponse OpenAIResponse
+    | TooMuchQuestions
+    | ReceiveCounter Int
 
 
 type alias OpenAIResponse =
@@ -55,3 +65,9 @@ type alias Choice =
     , logprobs : Int
     , finishReason : String
     }
+
+
+type OpenAIState
+    = Waiting
+    | Thinking
+    | Saturated
