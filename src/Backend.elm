@@ -72,7 +72,7 @@ updateFromFrontend sessionId clientId msg model =
                         , timeout = Nothing
                         , tracker = Nothing
                         }
-                    , Lamdera.sendToFrontend clientId <| ReceiveCounter <| model.counter + 1
+                    , Lamdera.broadcast <| ReceiveCounter <| model.counter + 1
                     ]
 
               else
