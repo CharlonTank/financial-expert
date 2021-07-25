@@ -1,6 +1,7 @@
 module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
+import Browser.Dom as Dom
 import Browser.Navigation as Nav
 import Element exposing (..)
 import Element.Background as Background
@@ -11,6 +12,7 @@ import Element.Region as Region
 import Html
 import Http exposing (Error(..))
 import Lamdera
+import Task
 import Types exposing (..)
 import Url
 
@@ -39,8 +41,9 @@ init url key =
       , openAIResponse = Nothing
       , openAIState = Waiting
       , counter = 0
+      , device = Nothing
       }
-    , Lamdera.sendToBackend GetCounter
+    , Cmd.batch [ Task.attempt ReceiveViewport <| Dom.getViewport, Lamdera.sendToBackend GetCounter ]
     )
 
 
@@ -63,6 +66,12 @@ update msg model =
             ( model, Cmd.none )
 
         NoOpFrontendMsg ->
+            ( model, Cmd.none )
+
+        ReceiveViewport (Ok viewport) ->
+            ( { model | device = Just <| classifyDeviceFromViewport viewport }, Cmd.none )
+
+        ReceiveViewport (Err _) ->
             ( model, Cmd.none )
 
         TextChanged newQuestion ->
@@ -241,3 +250,11 @@ httpErrorToString err =
 removeAPrompt : String -> String
 removeAPrompt =
     String.dropLeft 3
+
+
+classifyDeviceFromViewport : Dom.Viewport -> Device
+classifyDeviceFromViewport viewport =
+    classifyDevice
+        { height = round viewport.viewport.height
+        , width = round viewport.viewport.width
+        }

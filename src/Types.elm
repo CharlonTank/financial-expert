@@ -1,7 +1,9 @@
 module Types exposing (..)
 
 import Browser exposing (UrlRequest)
+import Browser.Dom exposing (Viewport)
 import Browser.Navigation exposing (Key)
+import Element exposing (Device)
 import Http exposing (Error)
 import Lamdera exposing (ClientId)
 import Url exposing (Url)
@@ -10,6 +12,7 @@ import Url exposing (Url)
 type alias FrontendModel =
     { key : Key
     , message : String
+    , device : Maybe Device
     , question : String
     , openAIResponse : Maybe OpenAIResponse
     , openAIState : OpenAIState
@@ -27,6 +30,7 @@ type FrontendMsg
     = UrlClicked UrlRequest
     | UrlChanged Url
     | NoOpFrontendMsg
+    | ReceiveViewport (Result Error Viewport)
     | TextChanged String
     | SubmitQuestion
 
