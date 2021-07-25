@@ -26,7 +26,7 @@ app =
 
 init : ( Model, Cmd BackendMsg )
 init =
-    ( { message = "Hello!", openAIResponse = Nothing, counter = 0 }
+    ( { message = "Hello!", counter = 0 }
     , Cmd.none
     )
 
@@ -37,11 +37,8 @@ update msg model =
         NoOpBackendMsg ->
             ( model, Cmd.none )
 
-        GetOpenAIResponse clientId (Ok openAIResponse) ->
-            ( { model | openAIResponse = Just openAIResponse }, Lamdera.sendToFrontend clientId <| ReceiveOpenAIResponse openAIResponse )
-
-        GetOpenAIResponse _ (Err _) ->
-            ( model, Cmd.none )
+        GetOpenAIResponse clientId openAIResponse ->
+            ( model, Lamdera.sendToFrontend clientId <| ReceiveOpenAIResponse openAIResponse )
 
 
 updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )

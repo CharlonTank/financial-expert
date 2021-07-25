@@ -19,7 +19,6 @@ type alias FrontendModel =
 
 type alias BackendModel =
     { message : String
-    , openAIResponse : Maybe OpenAIResponse
     , counter : Int
     }
 
@@ -45,7 +44,7 @@ type BackendMsg
 
 type ToFrontend
     = NoOpToFrontend
-    | ReceiveOpenAIResponse OpenAIResponse
+    | ReceiveOpenAIResponse (Result Error OpenAIResponse)
     | TooMuchQuestions
     | ReceiveCounter Int
 
@@ -71,3 +70,4 @@ type OpenAIState
     = Waiting
     | Thinking
     | Saturated
+    | Error Http.Error

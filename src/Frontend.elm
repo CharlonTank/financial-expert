@@ -9,6 +9,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Html
+import Http exposing (Error(..))
 import Lamdera
 import Types exposing (..)
 import Url
@@ -77,8 +78,11 @@ updateFromBackend msg model =
         NoOpToFrontend ->
             ( model, Cmd.none )
 
-        ReceiveOpenAIResponse openAIResponse ->
+        ReceiveOpenAIResponse (Ok openAIResponse) ->
             ( { model | openAIResponse = Just openAIResponse, openAIState = Waiting }, Cmd.none )
+
+        ReceiveOpenAIResponse (Err error) ->
+            ( { model | openAIState = Error error }, Cmd.none )
 
         TooMuchQuestions ->
             ( { model | openAIState = Saturated }, Cmd.none )
@@ -122,7 +126,7 @@ view model =
                         , width fill
                         , Region.heading 2
                         ]
-                        [ text <| "Ask anything (" ++ String.fromInt model.counter ++ "/30)" ]
+                        [ text <| "Ask me anything (" ++ String.fromInt model.counter ++ "/30)" ]
                     , Input.text
                         [ centerY
                         , centerX
@@ -203,6 +207,9 @@ viewResponse openAIResponse_ openAIState =
         Saturated ->
             text "Every question answered costs money to Charles, please ask him to reload the backend so you can try"
 
+        Error err ->
+            text <| httpErrorToString err
+
         Waiting ->
             case openAIResponse_ of
                 Nothing ->
@@ -210,6 +217,25 @@ viewResponse openAIResponse_ openAIState =
 
                 Just openAIResponse ->
                     text <| removeAPrompt <| Maybe.withDefault "" <| Maybe.map .text <| List.head openAIResponse.choices
+
+
+httpErrorToString : Http.Error -> String
+httpErrorToString err =
+    case err of
+        BadUrl url ->
+            "The only thing I can answer you is this bad url... " ++ url
+
+        Timeout ->
+            "I'm sorry, I think that I think too much... Timeout"
+
+        NetworkError ->
+            "I need internet to be able to answer you!"
+
+        BadStatus status ->
+            "The only thing I can answer you is this bad status number... " ++ String.fromInt status
+
+        BadBody body ->
+            "The only thing I can answer you is this bad body... " ++ body
 
 
 removeAPrompt : String -> String
