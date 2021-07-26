@@ -159,7 +159,7 @@ view model =
                                 , width fill
                                 , Region.heading 2
                                 ]
-                                [ text <| "Ask me anything (" ++ String.fromInt model.counter ++ "/30)" ]
+                                [ text <| "Ask me anything (" ++ String.fromInt (30 - model.counter) ++ " questions remaining)" ]
                             , Input.text
                                 [ centerY
                                 , centerX
