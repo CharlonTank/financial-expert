@@ -59,7 +59,7 @@ updateFromFrontend sessionId clientId msg model =
                             Http.jsonBody <|
                                 object
                                     [ ( "prompt", string <| addExamples question )
-                                    , ( "max_tokens", int 140 )
+                                    , ( "max_tokens", int 220 )
                                     , ( "temperature", float 0.5 )
                                     , ( "top_p", int 1 )
                                     , ( "n", int 1 )
