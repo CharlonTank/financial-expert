@@ -2,6 +2,7 @@ module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Dom as Dom
+import Browser.Events
 import Browser.Navigation as Nav
 import Element exposing (..)
 import Element.Background as Background
@@ -28,7 +29,7 @@ app =
         , onUrlChange = UrlChanged
         , update = update
         , updateFromBackend = updateFromBackend
-        , subscriptions = \m -> Sub.none
+        , subscriptions = subscriptions
         , view = view
         }
 
@@ -73,6 +74,9 @@ update msg model =
 
         ReceiveViewport (Err _) ->
             ( model, Cmd.none )
+
+        GotNewSize width height ->
+            ( { model | device = Just <| classifyDevice { width = width, height = height } }, Cmd.none )
 
         TextChanged newQuestion ->
             ( { model | question = newQuestion }, Cmd.none )
@@ -278,3 +282,8 @@ classifyDeviceFromViewport viewport =
         { height = round viewport.viewport.height
         , width = round viewport.viewport.width
         }
+
+
+subscriptions : Model -> Sub FrontendMsg
+subscriptions _ =
+    Browser.Events.onResize GotNewSize

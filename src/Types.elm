@@ -31,6 +31,7 @@ type FrontendMsg
     | UrlChanged Url
     | NoOpFrontendMsg
     | ReceiveViewport (Result Error Viewport)
+    | GotNewSize Int Int
     | TextChanged String
     | SubmitQuestion
 
