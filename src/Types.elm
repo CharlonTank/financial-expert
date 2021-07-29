@@ -17,6 +17,7 @@ type alias FrontendModel =
     , openAIResponse : Maybe OpenAIResponse
     , openAIState : OpenAIState
     , counter : Int
+    , password : String
     }
 
 

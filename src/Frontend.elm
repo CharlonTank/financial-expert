@@ -43,6 +43,7 @@ init url key =
       , openAIState = Waiting
       , counter = 0
       , device = Nothing
+      , password = ""
       }
     , Cmd.batch [ Task.attempt ReceiveViewport <| Dom.getViewport, Lamdera.sendToBackend GetCounter ]
     )
