@@ -93,9 +93,9 @@ updateFromFrontend sessionId clientId msg model =
 
         GetSession ->
             ( model
-            , case DE.find (\sessionId_ clientId_ -> sessionId == sessionId_) model.sessions of
+            , case DE.find (\sessionId_ _ -> sessionId == sessionId_) model.sessions of
                 Just session ->
-                    Lamdera.sendToFrontend (Debug.log "clientId" clientId) <| LoggedIn
+                    Lamdera.sendToFrontend clientId <| LoggedIn
 
                 Nothing ->
                     Cmd.none
