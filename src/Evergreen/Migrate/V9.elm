@@ -17,19 +17,19 @@ backendModel old =
 
 frontendMsg : Old.FrontendMsg -> MsgMigration New.FrontendMsg New.FrontendMsg
 frontendMsg old =
-    MsgUnchanged
+    MsgOldValueIgnored
 
 
 toBackend : Old.ToBackend -> MsgMigration New.ToBackend New.BackendMsg
 toBackend old =
-    MsgUnchanged
+    MsgOldValueIgnored
 
 
 backendMsg : Old.BackendMsg -> MsgMigration New.BackendMsg New.BackendMsg
 backendMsg old =
-    MsgUnchanged
+    MsgOldValueIgnored
 
 
 toFrontend : Old.ToFrontend -> MsgMigration New.ToFrontend New.FrontendMsg
 toFrontend old =
-    MsgUnchanged
+    MsgOldValueIgnored
