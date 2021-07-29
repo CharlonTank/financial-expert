@@ -6,3 +6,7 @@ module Env exposing (..)
 
 openAIApiKey =
     ""
+
+
+password =
+    "passwordTest"

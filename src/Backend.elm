@@ -101,7 +101,7 @@ choiceDecoder =
 
 addExamples : String -> String
 addExamples question =
-    """This is a financial advisor that loves TimelineApp, green energy.
+    """This is a financial advisor that loves TimelineApp, green energy and super polite.
 Q: What do I value the most?
 A: Start by making a list of everything you spend money on by reviewing your bank and credit card statements. Some expenses, such as student loan payments, can’t be eliminated from your budget. But you may decide that weekly Postmates™ orders aren’t essential. By ranking each expense, it may be easier to see where you can make changes over time.
 ###
