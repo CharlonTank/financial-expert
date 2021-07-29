@@ -1,6 +1,7 @@
 module Backend exposing (..)
 
 import Dict
+import Dict.Extra as DE
 import Env
 import Html
 import Http
@@ -26,7 +27,7 @@ app =
 
 init : ( Model, Cmd BackendMsg )
 init =
-    ( { message = "Hello!", counter = 0 }
+    ( { message = "Hello!", counter = 0, sessions = Dict.empty }
     , Cmd.none
     )
 
@@ -78,6 +79,27 @@ updateFromFrontend sessionId clientId msg model =
 
         GetCounter ->
             ( model, Lamdera.sendToFrontend clientId <| ReceiveCounter model.counter )
+
+        ReceivePassword password ->
+            let
+                ( newSessions, cmd ) =
+                    if Env.password == password then
+                        ( Dict.insert sessionId clientId model.sessions, Lamdera.sendToFrontend clientId <| LoggedIn )
+
+                    else
+                        ( model.sessions, Cmd.none )
+            in
+            ( { model | sessions = newSessions }, cmd )
+
+        GetSession ->
+            ( model
+            , case DE.find (\sessionId_ clientId_ -> sessionId == sessionId_) model.sessions of
+                Just session ->
+                    Lamdera.sendToFrontend (Debug.log "clientId" clientId) <| LoggedIn
+
+                Nothing ->
+                    Cmd.none
+            )
 
 
 decodeOpenAIResponse : Decoder OpenAIResponse

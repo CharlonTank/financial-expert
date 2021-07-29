@@ -3,9 +3,10 @@ module Types exposing (..)
 import Browser exposing (UrlRequest)
 import Browser.Dom exposing (Viewport)
 import Browser.Navigation exposing (Key)
+import Dict exposing (Dict)
 import Element exposing (Device)
 import Http exposing (Error)
-import Lamdera exposing (ClientId)
+import Lamdera exposing (ClientId, SessionId)
 import Url exposing (Url)
 
 
@@ -18,12 +19,14 @@ type alias FrontendModel =
     , openAIState : OpenAIState
     , counter : Int
     , password : String
+    , loggedIn : Bool
     }
 
 
 type alias BackendModel =
     { message : String
     , counter : Int
+    , sessions : Dict SessionId ClientId
     }
 
 
@@ -33,14 +36,18 @@ type FrontendMsg
     | NoOpFrontendMsg
     | ReceiveViewport (Result Error Viewport)
     | GotNewSize Int Int
-    | TextChanged String
+    | QuestionChanged String
     | SubmitQuestion
+    | PasswordChanged String
+    | SubmitPassword
 
 
 type ToBackend
     = NoOpToBackend
     | ReceiveQuestion String
+    | ReceivePassword String
     | GetCounter
+    | GetSession
 
 
 type BackendMsg
@@ -53,6 +60,7 @@ type ToFrontend
     | ReceiveOpenAIResponse (Result Error OpenAIResponse)
     | TooMuchQuestions
     | ReceiveCounter Int
+    | LoggedIn
 
 
 type alias OpenAIResponse =

@@ -44,8 +44,9 @@ init url key =
       , counter = 0
       , device = Nothing
       , password = ""
+      , loggedIn = False
       }
-    , Cmd.batch [ Task.attempt ReceiveViewport <| Dom.getViewport, Lamdera.sendToBackend GetCounter ]
+    , Cmd.batch [ Task.attempt ReceiveViewport <| Dom.getViewport, Lamdera.sendToBackend GetCounter, Lamdera.sendToBackend GetSession ]
     )
 
 
@@ -79,11 +80,17 @@ update msg model =
         GotNewSize width height ->
             ( { model | device = Just <| classifyDevice { width = width, height = height } }, Cmd.none )
 
-        TextChanged newQuestion ->
+        QuestionChanged newQuestion ->
             ( { model | question = newQuestion }, Cmd.none )
 
         SubmitQuestion ->
             ( { model | openAIState = Thinking }, Lamdera.sendToBackend <| ReceiveQuestion model.question )
+
+        PasswordChanged newPassword ->
+            ( { model | password = newPassword }, Cmd.none )
+
+        SubmitPassword ->
+            ( model, Lamdera.sendToBackend <| ReceivePassword model.password )
 
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
@@ -103,6 +110,9 @@ updateFromBackend msg model =
 
         ReceiveCounter counter ->
             ( { model | counter = counter }, Cmd.none )
+
+        LoggedIn ->
+            ( { model | loggedIn = True }, Cmd.none )
 
 
 view : Model -> { title : String, body : List (Html.Html FrontendMsg) }
@@ -140,96 +150,159 @@ view model =
                             , height shrink
                             , width fill
                             ]
-                            [ el
-                                [ Font.center
-                                , Font.bold
-                                , Font.color <| rgba255 136 170 166 1
-                                , Font.size 36
-                                , height shrink
-                                , width fill
-                                , Region.heading 1
-                                ]
-                              <|
-                                text "Financial Expert AI"
-                            , paragraph
-                                [ Font.center
-                                , Font.bold
-                                , Font.color <| rgba255 46 52 54 1
-                                , Font.size 24
-                                , height shrink
-                                , width fill
-                                , Region.heading 2
-                                ]
-                                [ text <| "Ask me anything (" ++ String.fromInt (30 - model.counter) ++ " questions remaining)" ]
-                            , Input.text
-                                [ centerY
-                                , centerX
-                                , spacingXY 0 4
-                                , height shrink
-                                , width
-                                    (fill
-                                        |> maximum 1024
-                                        |> minimum 256
-                                    )
-                                , paddingXY 8 8
-                                , Border.rounded 2
-                                , Border.color <| rgba255 186 189 182 1
-                                , Border.solid
-                                , Border.widthXY 1 1
-                                , Font.center
-                                ]
-                                { onChange = TextChanged
-                                , text = model.question
-                                , placeholder = Nothing
-                                , label =
-                                    Input.labelAbove
-                                        [ Font.color <| rgba255 46 52 54 1 ]
-                                    <|
-                                        text ""
-                                }
-                            , Input.button
-                                [ Background.color <| rgba255 52 101 164 1
-                                , centerY
-                                , centerX
-                                , Font.center
-                                , Font.color <| rgba255 255 255 255 1
-                                , height shrink
-                                , width shrink
-                                , paddingXY 16 8
-                                , Border.rounded 2
-                                , Border.color <| rgba255 52 101 164 1
-                                , Border.solid
-                                , Border.widthXY 1 1
-                                ]
-                                { onPress =
-                                    if model.openAIState == Waiting then
-                                        Just SubmitQuestion
+                          <|
+                            if model.loggedIn then
+                                signedInView model
 
-                                    else
-                                        Nothing
-                                , label = text "Submit question"
-                                }
-                            , column
-                                [ height shrink
-                                , width fill
-                                ]
-                                [ paragraph
-                                    [ centerY
-                                    , centerX
-                                    , spacingXY 0 4
-                                    , height shrink
-                                    , width
-                                        (fill
-                                            |> maximum 1024
-                                            |> minimum 256
-                                        )
-                                    ]
-                                    [ paragraph [] [ text "Answer: ", viewResponse model.openAIResponse model.openAIState ] ]
-                                ]
-                            ]
+                            else
+                                signedOutView model
                         ]
         ]
     }
+
+
+signedOutView : Model -> List (Element FrontendMsg)
+signedOutView model =
+    [ Input.text
+        [ centerY
+        , centerX
+        , spacingXY 0 4
+        , height shrink
+        , width
+            (fill
+                |> maximum 1024
+                |> minimum 256
+            )
+        , paddingXY 8 8
+        , Border.rounded 2
+        , Border.color <| rgba255 186 189 182 1
+        , Border.solid
+        , Border.widthXY 1 1
+        , Font.center
+        ]
+        { onChange = PasswordChanged
+        , text = model.password
+        , placeholder = Nothing
+        , label =
+            Input.labelAbove
+                [ Font.color <| rgba255 46 52 54 1 ]
+            <|
+                text ""
+        }
+    , Input.button
+        [ Background.color <| rgba255 52 101 164 1
+        , centerY
+        , centerX
+        , Font.center
+        , Font.color <| rgba255 255 255 255 1
+        , height shrink
+        , width shrink
+        , paddingXY 16 8
+        , Border.rounded 2
+        , Border.color <| rgba255 52 101 164 1
+        , Border.solid
+        , Border.widthXY 1 1
+        ]
+        { onPress =
+            if model.openAIState == Waiting then
+                Just SubmitPassword
+
+            else
+                Nothing
+        , label = text "Submit password"
+        }
+    ]
+
+
+signedInView : Model -> List (Element FrontendMsg)
+signedInView model =
+    [ el
+        [ Font.center
+        , Font.bold
+        , Font.color <| rgba255 136 170 166 1
+        , Font.size 36
+        , height shrink
+        , width fill
+        , Region.heading 1
+        ]
+      <|
+        text "Financial Expert AI"
+    , paragraph
+        [ Font.center
+        , Font.bold
+        , Font.color <| rgba255 46 52 54 1
+        , Font.size 24
+        , height shrink
+        , width fill
+        , Region.heading 2
+        ]
+        [ text <| "Ask me anything (" ++ String.fromInt (30 - model.counter) ++ " questions remaining)" ]
+    , Input.text
+        [ centerY
+        , centerX
+        , spacingXY 0 4
+        , height shrink
+        , width
+            (fill
+                |> maximum 1024
+                |> minimum 256
+            )
+        , paddingXY 8 8
+        , Border.rounded 2
+        , Border.color <| rgba255 186 189 182 1
+        , Border.solid
+        , Border.widthXY 1 1
+        , Font.center
+        ]
+        { onChange = QuestionChanged
+        , text = model.question
+        , placeholder = Nothing
+        , label =
+            Input.labelAbove
+                [ Font.color <| rgba255 46 52 54 1 ]
+            <|
+                text ""
+        }
+    , Input.button
+        [ Background.color <| rgba255 52 101 164 1
+        , centerY
+        , centerX
+        , Font.center
+        , Font.color <| rgba255 255 255 255 1
+        , height shrink
+        , width shrink
+        , paddingXY 16 8
+        , Border.rounded 2
+        , Border.color <| rgba255 52 101 164 1
+        , Border.solid
+        , Border.widthXY 1 1
+        ]
+        { onPress =
+            if model.openAIState == Waiting then
+                Just SubmitQuestion
+
+            else
+                Nothing
+        , label = text "Submit question"
+        }
+    , column
+        [ height shrink
+        , width fill
+        ]
+        [ paragraph
+            [ centerY
+            , centerX
+            , spacingXY 0 4
+            , height shrink
+            , width
+                (fill
+                    |> maximum 1024
+                    |> minimum 256
+                )
+            ]
+            [ paragraph [] [ text "Answer: ", viewResponse model.openAIResponse model.openAIState ] ]
+        ]
+    ]
 
 
 viewResponse : Maybe OpenAIResponse -> OpenAIState -> Element FrontendMsg
